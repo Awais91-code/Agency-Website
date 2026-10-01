@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Agency mark</title>
+  <rect width="64" height="64" rx="18" fill="#2563eb"/>
+  <path d="M17 46 28.2 18h7.7L47 46h-8.2l-2-5.7H26.9L25 46h-8Zm12.1-12.2h5.6L32 25.7l-2.9 8.1Z" fill="white"/>
+</svg>

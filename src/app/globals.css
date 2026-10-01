@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+:root {
+  --background: oklch(0.985 0.002 260);
+  --foreground: oklch(0.19 0.018 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.19 0.018 260);
+  --primary: oklch(0.57 0.22 258);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.955 0.008 260);
+  --secondary-foreground: oklch(0.24 0.018 260);
+  --muted: oklch(0.955 0.008 260);
+  --muted-foreground: oklch(0.52 0.02 260);
+  --border: oklch(0.9 0.01 260);
+  --ring: oklch(0.57 0.22 258);
+  --radius: 0.875rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 0.25rem);
+  --radius-md: calc(var(--radius) - 0.125rem);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 0.25rem);
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.145 0.018 260);
+    --foreground: oklch(0.955 0.008 260);
+    --card: oklch(0.19 0.018 260);
+    --card-foreground: oklch(0.955 0.008 260);
+    --primary: oklch(0.69 0.18 258);
+    --primary-foreground: oklch(0.14 0.018 260);
+    --secondary: oklch(0.235 0.02 260);
+    --secondary-foreground: oklch(0.955 0.008 260);
+    --muted: oklch(0.235 0.02 260);
+    --muted-foreground: oklch(0.71 0.02 260);
+    --border: oklch(0.29 0.02 260);
+    --ring: oklch(0.69 0.18 258);
+  }
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--primary) 24%, transparent);
+}
+
+:focus-visible {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* M05 · marketing presentation */
+.hero-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--border) 38%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--border) 38%, transparent) 1px, transparent 1px);
+  background-size: 42px 42px;
+  background-position: center center;
+}
+
+.hero-grid::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom, color-mix(in oklab, var(--background) 12%, transparent), var(--background) 98%);
+}
+
+.text-gradient {
+  background: linear-gradient(110deg, var(--primary), oklch(0.67 0.2 310), oklch(0.72 0.16 210));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.page-orb {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 9999px;
+  filter: blur(72px);
+  opacity: 0.72;
+}
+
+.page-orb-one {
+  width: 24rem;
+  height: 24rem;
+  right: -8rem;
+  top: -8rem;
+  background: color-mix(in oklab, var(--primary) 18%, transparent);
+}
+
+.page-orb-two {
+  width: 20rem;
+  height: 20rem;
+  left: -10rem;
+  bottom: -10rem;
+  background: color-mix(in oklab, oklch(0.66 0.18 310) 12%, transparent);
+}
+
+.hero-dashboard {
+  animation: agency-float 7s ease-in-out infinite;
+}
+
+@keyframes agency-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}

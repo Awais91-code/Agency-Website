@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Full static regression and production build
+        run: npm run check
+
+  critical-e2e:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Start local Supabase
+        run: npm run db:start
+
+      - name: Rebuild local database from migrations and seed
+        run: npm run db:reset
+
+      - name: Write CI application env from local Supabase
+        run: npm run ci:env
+        env:
+          M19_E2E_BASE_URL: http://127.0.0.1:3000
+
+      - name: Start Next.js
+        run: |
+          npm run dev -- --hostname 127.0.0.1 > /tmp/agency-next.log 2>&1 &
+          echo $! > /tmp/agency-next.pid
+
+      - name: Wait for application and run smoke test
+        run: npm run smoke
+        env:
+          M19_SMOKE_BASE_URL: http://127.0.0.1:3000
+          M19_SMOKE_ATTEMPTS: 24
+          M19_SMOKE_WAIT_MS: 5000
+
+      - name: Critical conversion and permission E2E
+        run: npm run e2e:critical
+        env:
+          M19_E2E_BASE_URL: http://127.0.0.1:3000
+
+      - name: Lightweight performance regression budget
+        run: npm run perf:check
+        env:
+          M19_SMOKE_BASE_URL: http://127.0.0.1:3000
+          PERF_MAX_RESPONSE_MS: 4000
+          PERF_MAX_HTML_KB: 900
+
+      - name: Print application log on failure
+        if: failure()
+        run: tail -n 250 /tmp/agency-next.log || true
+
+      - name: Stop local services
+        if: always()
+        run: |
+          if [ -f /tmp/agency-next.pid ]; then kill "$(cat /tmp/agency-next.pid)" || true; fi
+          npm run db:stop || true

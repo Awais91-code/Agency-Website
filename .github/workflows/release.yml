@@ -1,0 +1,98 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Deployment environment
+        required: true
+        type: choice
+        options:
+          - preview
+          - staging
+          - production
+      apply_migrations:
+        description: Apply pending Supabase migrations before deploy
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment: ${{ inputs.environment }}
+
+    env:
+      APP_URL: ${{ secrets.APP_URL }}
+      DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Release validation
+        run: |
+          npm run release:check
+          npm run security:scan
+          npm run db:check
+          npm run typecheck
+          npm run build
+
+      - name: Validate migration credentials
+        if: ${{ inputs.apply_migrations }}
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || (echo "Missing SUPABASE_ACCESS_TOKEN" && exit 1)
+          test -n "$SUPABASE_PROJECT_REF" || (echo "Missing SUPABASE_PROJECT_REF" && exit 1)
+          test -n "$SUPABASE_DB_PASSWORD" || (echo "Missing SUPABASE_DB_PASSWORD" && exit 1)
+
+      - name: Link target Supabase project
+        if: ${{ inputs.apply_migrations }}
+        run: npx supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Review migration state
+        if: ${{ inputs.apply_migrations }}
+        run: npx supabase migration list
+
+      - name: Apply forward-only database migrations
+        if: ${{ inputs.apply_migrations }}
+        run: npx supabase db push
+
+      - name: Trigger application deployment
+        run: |
+          test -n "$DEPLOY_HOOK_URL" || (echo "DEPLOY_HOOK_URL is not configured for this GitHub Environment" && exit 1)
+          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL" > /tmp/deploy-hook-response.txt
+          echo "Deployment hook accepted."
+
+      - name: Post-deploy smoke test
+        run: |
+          test -n "$APP_URL" || (echo "APP_URL is not configured for this GitHub Environment" && exit 1)
+          npm run smoke
+        env:
+          M19_SMOKE_BASE_URL: ${{ secrets.APP_URL }}
+          M19_SMOKE_ATTEMPTS: 30
+          M19_SMOKE_WAIT_MS: 10000
+
+      - name: Post-deploy performance budget
+        run: npm run perf:check
+        env:
+          M19_SMOKE_BASE_URL: ${{ secrets.APP_URL }}
+          PERF_MAX_RESPONSE_MS: 3500
+          PERF_MAX_HTML_KB: 900

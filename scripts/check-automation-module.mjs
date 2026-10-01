@@ -1,0 +1,7 @@
+import fs from "node:fs"; import path from "node:path";
+const root=process.cwd(), required=["supabase/migrations/20260922082000_m13_automation_engine.sql","src/features/automation/queue.ts","src/features/automation/dispatcher.ts","src/features/automation/callback.ts","src/app/api/automation/dispatch/route.ts","src/app/api/automation/callback/route.ts","src/app/admin/automation-logs/page.tsx","automation/n8n/workflows/v1/new-project-enquiry.json","automation/n8n/workflows/v1/no-booking-followup.json","automation/n8n/workflows/v1/meeting-booked.json","automation/n8n/workflows/v1/automation-failure.json","docs/AUTOMATION_ENGINE.md"];
+const missing=required.filter(x=>!fs.existsSync(path.join(root,x)));if(missing.length){console.error("M13 missing:",missing);process.exit(1);}
+const m=fs.readFileSync(path.join(root,required[0]),"utf8");for(const x of["automation_workflows","automation_events","automation_runs","automation_dead_letters","retry_limit"])if(!m.includes(x)){console.error("Missing migration token",x);process.exit(1);}
+const d=fs.readFileSync(path.join(root,"src/features/automation/dispatcher.ts"),"utf8");for(const x of["N8N_WEBHOOK_URL","N8N_WEBHOOK_SECRET","deadLetter","retryAt"])if(!d.includes(x)){console.error("Missing reliability token",x);process.exit(1);}
+for(const x of required.filter(x=>x.endsWith(".json"))){const j=JSON.parse(fs.readFileSync(path.join(root,x),"utf8"));if(j.meta?.workflowVersion!==1)process.exit(1);}
+console.log("M13 Automation Engine structural checks passed.");

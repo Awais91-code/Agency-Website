@@ -1,0 +1,166 @@
+{
+  "name": "Agency - Meeting Booked - v1",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agency-events",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook",
+      "name": "Agency Event Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -500,
+        0
+      ],
+      "webhookId": "f61241cb-e3cb-42f2-8434-66042ccb0d94"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.body.eventType }}",
+              "rightValue": "meeting.scheduled",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{ $json.headers['x-agency-automation-secret'] }}",
+              "rightValue": "={{ $env.N8N_AGENCY_WEBHOOK_SECRET }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if",
+      "name": "Validate Event Contract",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -280,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { accepted: true, workflowKey: 'meeting.booked', executionId: $execution.id } }}",
+        "options": {
+          "responseCode": 202
+        }
+      },
+      "id": "respond",
+      "name": "Respond Accepted",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -60,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.body.callbackUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-agency-callback-secret",
+              "value": "={{ $env.N8N_AGENCY_CALLBACK_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ contractVersion: 1, eventId: $json.body.eventId, eventKey: $json.body.eventKey, workflowKey: 'meeting.booked', workflowVersion: 1, externalRunId: String($execution.id), status: 'succeeded', retryable: true, result: { handledEventType: $json.body.eventType } }) }}",
+        "options": {}
+      },
+      "id": "callback",
+      "name": "Report Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        180,
+        -120
+      ]
+    }
+  ],
+  "connections": {
+    "Agency Event Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Event Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Event Contract": {
+      "main": [
+        [
+          {
+            "node": "Respond Accepted",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Respond Accepted": {
+      "main": [
+        [
+          {
+            "node": "Report Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bbbe3b74-e33f-4c47-9cb5-1e482e12be47",
+  "meta": {
+    "agencyModule": "M13",
+    "workflowKey": "meeting.booked",
+    "workflowVersion": 1,
+    "triggerEvent": "meeting.scheduled"
+  },
+  "tags": [
+    {
+      "name": "agency"
+    },
+    {
+      "name": "m13"
+    },
+    {
+      "name": "version-1"
+    }
+  ]
+}

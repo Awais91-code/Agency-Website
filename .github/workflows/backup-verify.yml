@@ -1,0 +1,56 @@
+name: Backup Verification
+
+on:
+  schedule:
+    - cron: "17 2 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-logical-backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.BACKUP_SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.BACKUP_SUPABASE_SECRET_KEY }}
+
+    steps:
+      - name: Check backup verification configuration
+        id: config
+        shell: bash
+        run: |
+          if [ -z "$BACKUP_DATABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$SUPABASE_SECRET_KEY" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Backup verification secrets are not configured yet; skipping."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.config.outputs.configured == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: steps.config.outputs.configured == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        if: steps.config.outputs.configured == 'true'
+        run: npm install --no-audit --no-fund
+
+      - name: Create temporary logical database/storage bundle
+        if: steps.config.outputs.configured == 'true'
+        run: node scripts/create-backup-bundle.mjs --output "$RUNNER_TEMP/agency-backup"
+
+      - name: Verify checksums and manifest
+        if: steps.config.outputs.configured == 'true'
+        run: node scripts/verify-backup-bundle.mjs "$RUNNER_TEMP/agency-backup"
+
+      - name: Destroy temporary sensitive bundle
+        if: always() && steps.config.outputs.configured == 'true'
+        run: rm -rf "$RUNNER_TEMP/agency-backup"

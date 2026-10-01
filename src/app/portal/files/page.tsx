@@ -1,0 +1,7 @@
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatPortalDate } from "@/features/portal/format";
+import { getPortalFiles } from "@/features/portal/queries";
+export const dynamic="force-dynamic";
+export default async function PortalFilesPage(){const files=await getPortalFiles();return <section className="space-y-6"><div><p className="text-sm font-semibold text-primary">Private files</p><h1 className="mt-2 text-3xl font-black">Project files</h1><p className="mt-2 text-muted-foreground">Only files explicitly shared with projects assigned to your account appear here.</p></div><Card><CardHeader><CardTitle>{files.length} file(s)</CardTitle></CardHeader><CardContent className="space-y-3">{files.length?files.map(f=><div key={f.id} className="grid gap-3 rounded-xl border p-4 md:grid-cols-[1fr_1fr_auto] md:items-center"><div><p className="font-bold">{f.asset?.display_name||f.asset?.original_name||"Project file"}</p><p className="mt-1 text-xs text-muted-foreground">{f.category} · {formatPortalDate(f.created_at)}</p></div><Link href={`/portal/projects/${f.project_id}`} className="text-sm font-semibold text-primary">{f.projectName}</Link><Button asChild size="sm" variant="outline"><a href={`/api/files/${f.media_asset_id}/download`}>Download</a></Button></div>):<p className="text-sm text-muted-foreground">No shared files yet.</p>}</CardContent></Card></section>}

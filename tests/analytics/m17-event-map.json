@@ -1,0 +1,94 @@
+[
+  {
+    "name": "primary_cta_click",
+    "lifecycle": "browser click",
+    "idempotency": "per click",
+    "allowed_properties": [
+      "location",
+      "cta_href"
+    ],
+    "sensitive_payloads": false
+  },
+  {
+    "name": "project_brief_start",
+    "lifecycle": "first hydrated project-brief session",
+    "idempotency": "once per project brief session token",
+    "allowed_properties": [
+      "location",
+      "service_slug"
+    ],
+    "sensitive_payloads": false
+  },
+  {
+    "name": "project_brief_step",
+    "lifecycle": "first view of each project-brief step",
+    "idempotency": "once per step per project brief session token",
+    "allowed_properties": [
+      "step",
+      "step_name",
+      "service_slug"
+    ],
+    "sensitive_payloads": false
+  },
+  {
+    "name": "project_brief_submit",
+    "lifecycle": "server-side finalized project brief",
+    "idempotency": "unique project brief ID",
+    "allowed_properties": [
+      "service_slug",
+      "result"
+    ],
+    "sensitive_payloads": false
+  },
+  {
+    "name": "contact_submit",
+    "lifecycle": "contact email handoff prepared",
+    "idempotency": "once per browser session",
+    "allowed_properties": [
+      "channel",
+      "location"
+    ],
+    "sensitive_payloads": false
+  },
+  {
+    "name": "booking_click",
+    "lifecycle": "booking CTA click",
+    "idempotency": "per click",
+    "allowed_properties": [
+      "location",
+      "cta_href"
+    ],
+    "sensitive_payloads": false
+  },
+  {
+    "name": "booking_complete",
+    "lifecycle": "verified booking webhook synchronized as scheduled",
+    "idempotency": "unique meeting ID",
+    "allowed_properties": [
+      "booking_type",
+      "result"
+    ],
+    "sensitive_payloads": false
+  },
+  {
+    "name": "case_study_view",
+    "lifecycle": "case-study detail page viewed",
+    "idempotency": "once per slug per browser session",
+    "allowed_properties": [
+      "case_study_slug",
+      "location"
+    ],
+    "sensitive_payloads": false
+  },
+  {
+    "name": "case_study_cta_click",
+    "lifecycle": "case-study detail CTA click",
+    "idempotency": "per click",
+    "allowed_properties": [
+      "case_study_slug",
+      "location",
+      "cta_href"
+    ],
+    "sensitive_payloads": false
+  }
+]

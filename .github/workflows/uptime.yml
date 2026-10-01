@@ -1,0 +1,29 @@
+name: Production Uptime Check
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PRODUCTION_APP_URL: ${{ secrets.PRODUCTION_APP_URL }}
+
+    steps:
+      - name: Check public health endpoint
+        shell: bash
+        run: |
+          if [ -z "$PRODUCTION_APP_URL" ]; then
+            echo "PRODUCTION_APP_URL is not configured; skipping until production monitoring is enabled."
+            exit 0
+          fi
+
+          response="$(curl --fail --silent --show-error --max-time 20 "${PRODUCTION_APP_URL%/}/api/health")"
+          echo "$response" | jq -e '.status == "ok"' > /dev/null
+          echo "Production health is OK."
